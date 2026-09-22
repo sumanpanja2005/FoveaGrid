@@ -1,0 +1,18 @@
+lidar:
+  beams: 64
+  max_range: 100.0
+  min_range: 0.5
+  fov_up_deg: 15.0
+  fov_down_deg: -25.0
+  scan_rate_hz: 10
+  horizontal_resolution_deg: 0.2
+  points_per_scan: 115200
+
+noise:
+  enabled: true
+  range_sigma_base: 0.02 # 2 cm base noise
+  range_sigma_far: 0.001 # distance dependent multiplier
+  angular_sigma_deg: 0.05
+  dropout_prob_base: 0.01
+  dropout_prob_far_mult: 0.0003
+  intensity_sigma: 0.05

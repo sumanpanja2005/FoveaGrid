@@ -1,0 +1,20 @@
+model:
+  num_classes: 5 # 0:unknown/unlabeled, 1:terrain, 2:static, 3:dynamic, 4:overhead
+  input_features: 11
+  voxel_size: [0.1, 0.1, 0.15]
+  
+  teacher:
+    channels: [32, 64, 128, 64, 32]
+    depth: 4
+
+  student:
+    channels: [16, 32, 64, 32, 16]
+    depth: 3
+
+  training:
+    batch_size: 2
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    distillation_temperature: 4.0
+    alpha_ce: 0.6
+    beta_distill: 0.4

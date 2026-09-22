@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*$py.class
+
+# PyTest & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Environment
+venv/
+env/
+.env
+
+# Data & Models (Heavy binaries)
+data/raw/*
+data/processed/*
+!data/synthetic/scene_000001/scan_000.npy
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System Files
+.DS_Store
+Thumbs.db

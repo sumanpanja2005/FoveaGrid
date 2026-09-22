@@ -1,0 +1,18 @@
+dataset:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  synthetic_dir: "data/synthetic"
+  splits:
+    train_scenes: 15
+    val_scenes: 5
+    test_scenes: 5
+  scans_per_scene: 10
+  ego_speed_range: [2.0, 25.0] # m/s
+  classes:
+    0: "unknown"
+    1: "terrain"
+    2: "static_obstacle"
+    3: "dynamic_object"
+    4: "overhead_obstacle"
+    5: "curb"
+    6: "pothole"
