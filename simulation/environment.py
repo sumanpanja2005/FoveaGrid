@@ -22,6 +22,10 @@ class SyntheticEnvironment:
         self.ego_pose = np.eye(4, dtype=np.float32) # Ego pose in World frame SE(3)
         self.ego_velocity = np.array([8.0, 0.0, 0.0], dtype=np.float32) # Default 8 m/s forward
 
+        # Initialize ego Z elevation on terrain + 1.8m LiDAR mount height
+        z_ground, _ = self.terrain.get_ground_elevation(np.array([0.0]), np.array([0.0]))
+        self.ego_pose[2, 3] = float(z_ground[0] + 1.8)
+
         self._populate_scene()
 
     def _populate_scene(self):

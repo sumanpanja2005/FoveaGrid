@@ -109,17 +109,14 @@ class LidarSimulator:
         # Calculate Cartesian point positions in LiDAR local frame
         points_local = valid_dirs_local * valid_dists[:, None]
 
-        # Apply Realistic Sensor Noise & Dropout
-        noisy_points, noisy_intensities, final_labels = self.noise_model.apply_noise(
-            points_local, valid_intensities, valid_labels
+        # Apply Realistic Sensor Noise & Dropout (preserving exact beam ring assignment)
+        noisy_points, noisy_intensities, final_labels, rings_output = self.noise_model.apply_noise(
+            points_local, valid_intensities, valid_labels, rings=valid_rings
         )
         
         # Calculate timestamps (spinning rotation sweep)
         azimuths_valid = np.arctan2(noisy_points[:, 1], noisy_points[:, 0]) % (2 * np.pi)
         timestamps = timestamp + (azimuths_valid / (2 * np.pi)) * (1.0 / self.scan_rate)
-
-        # Match rings after noise filtering
-        rings_output = valid_rings[:len(noisy_points)]
 
         return {
             "points": noisy_points.astype(np.float32), # Nx3 LiDAR frame

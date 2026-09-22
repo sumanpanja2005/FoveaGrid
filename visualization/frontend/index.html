@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoveaGrid: Adaptive 2.5D LiDAR Perception & Mapping</title>
+    <title>FoveaGrid: Unified 2.5D LiDAR Roadside Elevation Map</title>
     <link rel="stylesheet" href="/static/style.css">
     <!-- Google Fonts & Three.js -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -12,94 +12,186 @@
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Header -->
+        <!-- Top Navigation & Controls Bar -->
         <header class="navbar">
             <div class="logo">
                 <span class="logo-icon">👁️</span>
-                <span class="logo-text">Fovea<span class="highlight">Grid</span></span>
-                <span class="badge">SIH 2026 #26053</span>
-            </div>
-            
-            <div class="view-tabs">
-                <button class="tab-btn active" data-view="view1">View 1: Raw LiDAR</button>
-                <button class="tab-btn" data-view="view2">View 2: Semantics</button>
-                <button class="tab-btn" data-view="view3">View 3: FoveaGrid</button>
-                <button class="tab-btn" data-view="view4">View 4: Dynamics</button>
-                <button class="tab-btn" data-view="view5">View 5: Risk Map</button>
-                <button class="tab-btn" data-view="view6">View 6: Performance</button>
+                <div class="logo-group">
+                    <span class="logo-text">Fovea<span class="highlight">Grid</span> 2.5D</span>
+                    <span class="logo-sub">Roadside Elevation & Perception</span>
+                </div>
             </div>
 
-            <div class="status-pill">
-                <span class="dot live"></span> Live Simulation
+            <!-- Playback & Source Stream Controls -->
+            <div class="playback-controls">
+                <button id="btn-play-pause" class="ctrl-btn active" title="Toggle Real-Time Stream">
+                    <span id="play-icon">⏸</span> <span id="play-text">Pause</span>
+                </button>
+                <button id="btn-step" class="ctrl-btn" title="Step Single Frame">
+                    <span>⏭</span> Step
+                </button>
+                <div class="source-select-wrap">
+                    <label for="select-source">Source:</label>
+                    <select id="select-source" class="source-dropdown">
+                        <option value="dummy" selected>Dummy Roadside LiDAR</option>
+                        <option value="synthetic">Synthetic Dynamic Stream</option>
+                        <option value="dataset">Recorded Dataset Scans</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Live Status Pill -->
+            <div class="status-pill" id="status-pill">
+                <span class="dot live" id="status-dot"></span>
+                <span id="status-text">Connected: Live 2.5D Stream</span>
             </div>
         </header>
 
-        <!-- Main Workspace -->
+        <!-- Main Body: 3D Canvas & Side HUD -->
         <div class="main-body">
-            <!-- 3D Canvas Area -->
+            <!-- Central 3D Canvas Container -->
             <div class="canvas-wrapper">
                 <div id="three-canvas-container"></div>
-                <div class="view-title" id="view-title-label">View 1: Raw 64-Beam LiDAR Point Cloud</div>
+
+                <!-- Floating Camera Preset Buttons (Top-Left) -->
+                <div class="camera-presets-bar">
+                    <button class="cam-btn active" data-view="isometric">Isometric 3D</button>
+                    <button class="cam-btn" data-view="bev">Top-Down BEV</button>
+                    <button class="cam-btn" data-view="driver">Ego Driver</button>
+                    <button class="cam-btn" data-view="reset">Reset</button>
+                </div>
+
+                <!-- Floating False-Color Elevation Scale Colorbar (Bottom-Left) -->
+                <div class="elevation-scale-bar" id="elevation-scale-widget">
+                    <div class="scale-title">Elevation Z (m)</div>
+                    <div class="scale-gradient"></div>
+                    <div class="scale-ticks">
+                        <span id="scale-max">+3.5m (Poles / Roofs)</span>
+                        <span id="scale-mid">0.0m (Road Pavement)</span>
+                        <span id="scale-min">-1.8m (Potholes / Low)</span>
+                    </div>
+                </div>
+
+                <!-- Floating Overlay Banner -->
+                <div class="scene-title-overlay">
+                    <span class="title-primary">Unified 2.5D Elevation & Obstacle Map</span>
+                    <span class="title-secondary" id="active-scene-desc">Dynamic Roadway • Curbs • Potholes • 3D Bounding Boxes</span>
+                </div>
             </div>
 
-            <!-- Side Metrics Panel -->
+            <!-- Side HUD Panels -->
             <aside class="side-panel">
-                <div class="panel-card">
-                    <h3>Pipeline Performance</h3>
-                    <div class="metric-row">
-                        <span class="metric-label">Pipeline FPS:</span>
-                        <span class="metric-val highlight-val" id="val-fps">38.5 FPS</span>
+                <!-- 1. Telemetry Card -->
+                <div class="panel-card telemetry-card">
+                    <div class="card-header">
+                        <h3>System Telemetry</h3>
+                        <span class="badge" id="telemetry-badge">Live</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Total Latency:</span>
-                        <span class="metric-val" id="val-latency">26.0 ms</span>
+                        <span class="metric-label">Input Source:</span>
+                        <span class="metric-val highlight-val" id="val-source">Synthetic Stream</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Memory Compression:</span>
-                        <span class="metric-val success-val" id="val-compression">56.1×</span>
-                    </div>
-                </div>
-
-                <div class="panel-card">
-                    <h3>Active Grid Stats</h3>
-                    <div class="metric-row">
-                        <span class="metric-label">Fovea Cell Count:</span>
-                        <span class="metric-val" id="val-fovea-cells">285,400</span>
+                        <span class="metric-label">Detected Format:</span>
+                        <span class="metric-val" id="val-format">Procedural LiDAR</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Uniform 5cm Baseline:</span>
-                        <span class="metric-val muted" id="val-uniform-cells">16,000,000</span>
+                        <span class="metric-label">Raw Point Stream:</span>
+                        <span class="metric-val" id="val-raw-points">18,800 pts</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Fovea Memory:</span>
-                        <span class="metric-val" id="val-fovea-mem">34.8 MB</span>
-                    </div>
-                </div>
-
-                <div class="panel-card">
-                    <h3>Safety & Accuracy</h3>
-                    <div class="metric-row">
-                        <span class="metric-label">Hazard Preservation:</span>
-                        <span class="metric-val success-val" id="val-hpr">98.5%</span>
+                        <span class="metric-label">Processed Points:</span>
+                        <span class="metric-val" id="val-processed-points">5,420 pts</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Semantic mIoU:</span>
-                        <span class="metric-val" id="val-miou">89.4%</span>
+                        <span class="metric-label">Total Pipeline Latency:</span>
+                        <span class="metric-val highlight-val" id="val-latency">28.5 ms</span>
                     </div>
                     <div class="metric-row">
-                        <span class="metric-label">Active Micro-Foveas:</span>
-                        <span class="metric-val highlight-val" id="val-micro-count">2</span>
+                        <span class="metric-label">Stream FPS:</span>
+                        <span class="metric-val success-val" id="val-fps">12.0 FPS</span>
                     </div>
                 </div>
 
+                <!-- 2. Interactive Layer Toggles -->
+                <div class="panel-card layer-card">
+                    <h3>2.5D Map Layer Controls</h3>
+                    
+                    <div class="style-toggle-row">
+                        <span class="layer-label">Mesh Style:</span>
+                        <div class="btn-group">
+                            <button class="style-btn active" data-style="surface">Solid</button>
+                            <button class="style-btn" data-style="wireframe">Wire</button>
+                            <button class="style-btn" data-style="points">Points</button>
+                        </div>
+                    </div>
+
+                    <div class="toggle-list">
+                        <label class="toggle-item">
+                            <input type="checkbox" id="layer-mesh" checked>
+                            <span class="checkmark"></span>
+                            <span class="toggle-text">2.5D Elevation Surface</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" id="layer-boxes" checked>
+                            <span class="checkmark"></span>
+                            <span class="toggle-text">3D Obstacle Boxes (Vehicles/Pedestrians)</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" id="layer-curbs" checked>
+                            <span class="checkmark"></span>
+                            <span class="toggle-text">Road Curbs & Boundaries</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" id="layer-potholes" checked>
+                            <span class="checkmark"></span>
+                            <span class="toggle-text">Pothole Depression Markers</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" id="layer-grid" checked>
+                            <span class="checkmark"></span>
+                            <span class="toggle-text">Ground Grid & Sensor Axes</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3. Detected Road Features Counter -->
+                <div class="panel-card features-card">
+                    <h3>Detected Road Features</h3>
+                    <div class="feature-stat-grid">
+                        <div class="stat-box">
+                            <span class="stat-num" id="stat-vehicles">1</span>
+                            <span class="stat-lbl">Vehicles</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="stat-pedestrians">1</span>
+                            <span class="stat-lbl">Pedestrians</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num" id="stat-poles">3</span>
+                            <span class="stat-lbl">Utility Poles</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-num highlight-stat" id="stat-potholes">2</span>
+                            <span class="stat-lbl">Potholes</span>
+                        </div>
+                    </div>
+                    <div class="pothole-list-box" id="pothole-detail-list">
+                        <!-- Dynamically filled with pothole depths -->
+                    </div>
+                </div>
+
+                <!-- 4. Color Elevation Legend -->
                 <div class="panel-card legend-card">
-                    <h3>Color Legend</h3>
-                    <div class="legend-items" id="legend-box">
-                        <div class="legend-item"><span class="color-dot" style="background:#2ecc71"></span> Terrain (Road/Grass)</div>
-                        <div class="legend-item"><span class="color-dot" style="background:#95a5a6"></span> Static Obstacle</div>
-                        <div class="legend-item"><span class="color-dot" style="background:#e74c3c"></span> Dynamic Object</div>
-                        <div class="legend-item"><span class="color-dot" style="background:#f1c40f"></span> Overhead Hazard</div>
-                        <div class="legend-item"><span class="color-dot" style="background:#9b59b6"></span> Road Pothole</div>
+                    <h3>Unified Elevation Legend</h3>
+                    <div class="legend-items">
+                        <div class="legend-item"><span class="color-dot" style="background:#081d58"></span> Deep Depression / Pothole</div>
+                        <div class="legend-item"><span class="color-dot" style="background:#1d91c0"></span> Road Ground Base</div>
+                        <div class="legend-item"><span class="color-dot" style="background:#41b6c4"></span> Sidewalk Pavement</div>
+                        <div class="legend-item"><span class="color-dot" style="background:#00d2d3"></span> Curb Elevation Step</div>
+                        <div class="legend-item"><span class="color-dot" style="background:#fed976"></span> Pedestrian Footprint</div>
+                        <div class="legend-item"><span class="color-dot" style="background:#f03b20"></span> Vehicle 3D Wireframe</div>
+                        <div class="legend-item"><span class="color-dot" style="background:#f1c40f"></span> Utility Pole / Infrastructure</div>
                     </div>
                 </div>
             </aside>

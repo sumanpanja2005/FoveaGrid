@@ -30,9 +30,12 @@ class LidarNoiseModel:
         self,
         points: np.ndarray, # Nx3 [x, y, z]
         intensities: np.ndarray, # N
-        labels: np.ndarray # N
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        labels: np.ndarray, # N
+        rings: np.ndarray = None # Optional N
+    ):
         if len(points) == 0:
+            if rings is not None:
+                return points, intensities, labels, rings
             return points, intensities, labels
 
         # Convert to spherical coordinates: r, azimuth, elevation
@@ -67,4 +70,6 @@ class LidarNoiseModel:
         dropout_probs = self.dropout_prob_base + self.dropout_prob_far_mult * (ranges**2)
         keep_mask = self.rng.random(size=len(ranges)) > dropout_probs
 
+        if rings is not None:
+            return noisy_points[keep_mask], noisy_intensities[keep_mask], labels[keep_mask], rings[keep_mask]
         return noisy_points[keep_mask], noisy_intensities[keep_mask], labels[keep_mask]
